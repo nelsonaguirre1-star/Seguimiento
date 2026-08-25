@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: seguimiento-cde
+    runtime: node
+    plan: starter
+    buildCommand: npm ci; npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+    disk:
+      name: seguimiento-cde-data
+      mountPath: /app/data
+      sizeGB: 1
