@@ -16,8 +16,9 @@ const DIST_DIR = path.join(ROOT_DIR, 'dist');
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === 'production';
-const PORT = Number(process.env.PORT || 3001);
-const HOST = process.env.HOST || (IS_PROD ? '0.0.0.0' : '127.0.0.1');
+const CLOUD_PORT = process.env.PORT || process.env.APP_PORT || process.env.DATABRICKS_APP_PORT || process.env.WEBSITES_PORT;
+const PORT = Number(CLOUD_PORT || 3001);
+const HOST = process.env.HOST || '0.0.0.0';
 const DIST_INDEX_FILE = path.join(DIST_DIR, 'index.html');
 const SHOULD_SERVE_CLIENT = process.env.SERVE_CLIENT === 'true' || IS_PROD || fs.existsSync(DIST_INDEX_FILE);
 const SESSION_COOKIE = 'cde_session';
@@ -690,9 +691,24 @@ if (SHOULD_SERVE_CLIENT) {
   });
 }
 
-// --- Inicialización ---
-initDataDir();
-
-app.listen(PORT, HOST, () => {
-  console.log(`✅ Seguimiento CDE API corriendo en http://${HOST}:${PORT}`);
+process.on('uncaughtException', (err) => {
+  console.error('💥 uncaughtException:', err);
+  process.exit(1);
 });
+
+process.on('unhandledRejection', (reason) => {
+  console.error('💥 unhandledRejection:', reason);
+  process.exit(1);
+});
+
+// --- Inicialización ---
+try {
+  initDataDir();
+  app.listen(PORT, HOST, () => {
+    console.log(`✅ Seguimiento CDE API corriendo en http://${HOST}:${PORT}`);
+    console.log(`ℹ️ NODE_ENV=${process.env.NODE_ENV || 'undefined'} SHOULD_SERVE_CLIENT=${SHOULD_SERVE_CLIENT}`);
+  });
+} catch (err) {
+  console.error('❌ Error fatal al iniciar la aplicación:', err);
+  process.exit(1);
+}
