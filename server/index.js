@@ -685,7 +685,7 @@ app.get('/api/export', (req, res) => {
 
 if (SHOULD_SERVE_CLIENT) {
   app.use(express.static(DIST_DIR));
-  app.get('*', (req, res, next) => {
+  app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     return res.sendFile(DIST_INDEX_FILE);
   });
