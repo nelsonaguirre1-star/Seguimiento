@@ -687,6 +687,8 @@ if (SHOULD_SERVE_CLIENT) {
   app.use(express.static(DIST_DIR));
   app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    if (req.path.startsWith('/assets/')) return next();
+    if (req.path.includes('.')) return next();
     return res.sendFile(DIST_INDEX_FILE);
   });
 }
