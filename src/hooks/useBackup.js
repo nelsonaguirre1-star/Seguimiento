@@ -28,5 +28,30 @@ export default function useBackup() {
     URL.revokeObjectURL(url);
   };
 
-  return { createBackup, restore, exportData };
+  const importData = async (file) => {
+    if (!file) throw new Error('Debe seleccionar un archivo JSON');
+
+    let payload;
+    try {
+      const text = await file.text();
+      payload = JSON.parse(text);
+    } catch {
+      throw new Error('El archivo no es un JSON válido');
+    }
+
+    const res = await fetch('/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || 'Error importando datos');
+    }
+
+    return data;
+  };
+
+  return { createBackup, restore, exportData, importData };
 }

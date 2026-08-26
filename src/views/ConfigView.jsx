@@ -4,7 +4,7 @@ import Btn from '../components/Btn';
 import useBackup from '../hooks/useBackup';
 
 export default function ConfigView({ cells, onUpdateCell, readOnly = false, currentUser = null }) {
-  const { createBackup, exportData } = useBackup();
+  const { createBackup, exportData, importData } = useBackup();
   const [editingCell, setEditingCell] = useState(null);
   const [cellName, setCellName] = useState('');
   const [cellLeader, setCellLeader] = useState('');
@@ -19,6 +19,7 @@ export default function ConfigView({ cells, onUpdateCell, readOnly = false, curr
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('reader');
+  const [importing, setImporting] = useState(false);
 
   const loadUsers = async () => {
     if (readOnly) return;
@@ -70,6 +71,29 @@ export default function ConfigView({ cells, onUpdateCell, readOnly = false, curr
     await exportData();
     setMsg('Datos exportados');
     setTimeout(() => setMsg(''), 2000);
+  };
+
+  const handleImport = async (event) => {
+    if (readOnly) return;
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!confirm('Esta acción sobrescribirá los datos actuales. ¿Desea continuar?')) return;
+
+    setImporting(true);
+    try {
+      const result = await importData(file);
+      const imported = result?.imported || {};
+      setMsg(`Importación exitosa · cells:${imported.cells ?? 0}, activities:${imported.activities ?? 0}, archive:${imported.archive ?? 0}, notes:${imported.notes ?? 0}`);
+      setTimeout(() => setMsg(''), 5000);
+      window.location.reload();
+    } catch (err) {
+      setMsg(err.message || 'Error importando datos');
+      setTimeout(() => setMsg(''), 4000);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleReset = async () => {
@@ -214,6 +238,16 @@ export default function ConfigView({ cells, onUpdateCell, readOnly = false, curr
         <div className="flex gap-3 flex-wrap">
           <Btn variant="secondary" onClick={handleBackup} disabled={readOnly}>Crear backup manual</Btn>
           <Btn variant="secondary" onClick={handleExport} disabled={readOnly}>Exportar datos (JSON)</Btn>
+          <label className={`inline-flex items-center px-3 py-2 rounded-sm text-sm border ${readOnly || importing ? 'opacity-60 cursor-not-allowed border-ink/20 text-ink-mute' : 'cursor-pointer border-ink/30 text-ink hover:bg-ink/5'}`}>
+            {importing ? 'Importando...' : 'Importar datos (JSON)'}
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              disabled={readOnly || importing}
+              onChange={handleImport}
+            />
+          </label>
           <Btn variant="danger" onClick={handleReset} disabled={readOnly}>Reset completo</Btn>
         </div>
         <p className="text-xs text-ink-mute mt-2">
