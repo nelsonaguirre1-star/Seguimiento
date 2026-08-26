@@ -31,14 +31,16 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || (IS_PROD ? '' : 'http://l
   .filter(Boolean);
 
 // --- Middleware ---
-app.use(cors({
+const corsMiddleware = cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error('Origen no permitido por CORS'));
   },
   credentials: true,
-}));
+});
+
+app.use('/api', corsMiddleware);
 app.use(express.json({ limit: '1mb' }));
 
 function parseCookies(req) {
