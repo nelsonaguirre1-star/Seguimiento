@@ -41,7 +41,7 @@ const corsMiddleware = cors({
 });
 
 app.use('/api', corsMiddleware);
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 function parseCookies(req) {
   const raw = req.headers.cookie || '';
@@ -682,6 +682,47 @@ app.get('/api/export', (req, res) => {
     res.json(exportAll());
   } catch (err) {
     res.status(500).json({ error: 'Error exportando datos', details: err.message });
+  }
+});
+
+app.post('/api/import', (req, res) => {
+  try {
+    const payload = req.body || {};
+    const source = payload.snapshot || payload.data || payload;
+
+    const cells = Array.isArray(source.cells) ? source.cells : null;
+    const activities = Array.isArray(source.activities) ? source.activities : null;
+    const archive = Array.isArray(source.archive) ? source.archive : null;
+    const notes = Array.isArray(source.notes) ? source.notes : null;
+    const users = Array.isArray(source.users) ? source.users : null;
+
+    if (!cells || !activities || !archive || !notes) {
+      return res.status(400).json({
+        error: 'Payload inválido. Debe incluir arrays: cells, activities, archive, notes',
+      });
+    }
+
+    writeData('cells.json', cells);
+    writeData('activities.json', activities);
+    writeData('archive.json', archive);
+    writeData('notes.json', notes);
+
+    if (users) {
+      writeData('users.json', users);
+    }
+
+    return res.json({
+      ok: true,
+      imported: {
+        cells: cells.length,
+        activities: activities.length,
+        archive: archive.length,
+        notes: notes.length,
+        users: users ? users.length : 'sin cambios',
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Error importando datos', details: err.message });
   }
 });
 
