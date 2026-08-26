@@ -684,11 +684,13 @@ app.get('/api/export', (req, res) => {
 });
 
 if (SHOULD_SERVE_CLIENT) {
+  app.use('/assets', express.static(path.join(DIST_DIR, 'assets'), { maxAge: '1y', immutable: true }));
   app.use(express.static(DIST_DIR));
   app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     if (req.path.startsWith('/assets/')) return next();
     if (req.path.includes('.')) return next();
+    res.setHeader('Cache-Control', 'no-store');
     return res.sendFile(DIST_INDEX_FILE);
   });
 }
