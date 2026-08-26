@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -17,6 +18,8 @@ const app = express();
 const IS_PROD = process.env.NODE_ENV === 'production';
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || (IS_PROD ? '0.0.0.0' : '127.0.0.1');
+const DIST_INDEX_FILE = path.join(DIST_DIR, 'index.html');
+const SHOULD_SERVE_CLIENT = process.env.SERVE_CLIENT === 'true' || IS_PROD || fs.existsSync(DIST_INDEX_FILE);
 const SESSION_COOKIE = 'cde_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'cde-dev-secret-change-me';
@@ -679,11 +682,11 @@ app.get('/api/export', (req, res) => {
   }
 });
 
-if (IS_PROD) {
+if (SHOULD_SERVE_CLIENT) {
   app.use(express.static(DIST_DIR));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
-    return res.sendFile(path.join(DIST_DIR, 'index.html'));
+    return res.sendFile(DIST_INDEX_FILE);
   });
 }
 
