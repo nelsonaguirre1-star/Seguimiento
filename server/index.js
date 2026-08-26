@@ -684,16 +684,27 @@ app.get('/api/export', (req, res) => {
 });
 
 if (SHOULD_SERVE_CLIENT) {
-  app.use('/assets', express.static(path.join(DIST_DIR, 'assets'), { maxAge: '1y', immutable: true }));
-  app.use(express.static(DIST_DIR));
+  app.use(express.static(DIST_DIR, {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store');
+      }
+    },
+  }));
   app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
-    if (req.path.startsWith('/assets/')) return next();
     if (req.path.includes('.')) return next();
     res.setHeader('Cache-Control', 'no-store');
     return res.sendFile(DIST_INDEX_FILE);
   });
 }
+
+app.use((err, req, res, _next) => {
+  console.error('❌ Request error:', req.method, req.originalUrl, err?.message || err);
+  if (res.headersSent) return;
+  res.status(err?.status || 500).json({ error: 'Internal Server Error' });
+});
 
 process.on('uncaughtException', (err) => {
   console.error('💥 uncaughtException:', err);
