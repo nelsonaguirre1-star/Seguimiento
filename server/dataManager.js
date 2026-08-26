@@ -4,9 +4,39 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, '..', 'data');
+const REPO_DATA_DIR = path.join(__dirname, '..', 'data');
+const TMP_DATA_DIR = path.join('/tmp', 'seguimiento-cde-data');
+const DATA_DIR = resolveDataDir();
 const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 const MAX_BACKUPS = 30;
+
+function canUseDataDir(candidatePath) {
+  try {
+    fs.mkdirSync(candidatePath, { recursive: true });
+    const testFile = path.join(candidatePath, '.write-test');
+    fs.writeFileSync(testFile, 'ok', 'utf-8');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveDataDir() {
+  const candidates = [
+    process.env.DATA_DIR,
+    REPO_DATA_DIR,
+    TMP_DATA_DIR,
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (canUseDataDir(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error('No se encontró una carpeta de datos escribible. Defina DATA_DIR.');
+}
 
 // Células iniciales del CDE
 const DEFAULT_CELLS = [
