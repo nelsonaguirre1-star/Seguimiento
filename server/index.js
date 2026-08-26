@@ -25,7 +25,7 @@ const SESSION_COOKIE = 'cde_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'cde-dev-secret-change-me';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true' || IS_PROD;
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || (IS_PROD ? '' : 'http://localhost:5173,http://127.0.0.1:5173'))
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);
